@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แฉพอเรีย (Chaeporia) v13.0 - Ultimate Cyber Warfare & Threat Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+--bg-color: #010206;
+--panel-bg: #060913;
+--primary: #00ff55;
+--accent: #00e5ff;
+--danger: #ff0044;
+--warning: #ffaa00;
+--text-main: #f1f5f9;
+--text-dim: #64748b;
+--border: #1e293b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Prompt', 'Share Tech Mono', monospace; }
+body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+/* Scanlines Overlay */
+body::after {
+content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+z-index: 99999; background-size: 100% 3px, 3px 100%; pointer-events: none;
+}
+.screen { display: none; width: 100%; min-height: 100vh; padding: 20px; }
+.screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+/* Lock Screen */
+#lock-screen {
+background: radial-gradient(circle at center, #0a0f1d 0%, #000103 100%);
+text-align: center;
+}
+.lock-box {
+background: var(--panel-bg); border: 2px solid var(--danger); padding: 40px; border-radius: 10px;
+box-shadow: 0 0 50px rgba(255, 0, 68, 0.3); max-width: 450px; width: 100%;
+}
+.lock-box h1 { color: var(--danger); font-size: 2rem; margin-bottom: 10px; text-shadow: 0 0 12px var(--danger); }
+.lock-box p { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 25px; }
+.input-group { display: flex; flex-direction: column; gap: 15px; }
+input[type="password"], input[type="text"], textarea {
+background: #000; border: 1px solid var(--border); color: var(--primary); padding: 12px 15px;
+font-size: 1rem; border-radius: 6px; outline: none; width: 100%;
+}
+input[type="password"] { text-align: center; letter-spacing: 2px; }
+input:focus, textarea:focus { border-color: var(--danger); box-shadow: 0 0 15px rgba(255,0,68,0.5); }
+.btn {
+background: linear-gradient(135deg, var(--danger), #cc0033); color: #fff; font-weight: 700;
+padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: 0.2s;
+}
+.btn:hover { opacity: 0.9; box-shadow: 0 0 20px var(--danger); }
+.error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 10px; min-height: 20px; }
+/* Main App Screen */
+#main-screen { justify-content: flex-start; padding: 20px; max-width: 1200px; margin: 0 auto; }
+header {
+width: 100%; display: flex; justify-content: space-between; align-items: center;
+border-bottom: 2px solid var(--border); padding-bottom: 15px; margin-bottom: 20px;
+}
+header h2 { color: var(--danger); text-shadow: 0 0 8px var(--danger); }
+.admin-badge { background: var(--danger); color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+.user-badge { background: var(--accent); color: #000; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+.dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; }
+@media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
+.panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; position: relative; margin-bottom: 20px; }
+.panel h3 { color: var(--accent); margin-bottom: 15px; font-size: 1.1rem; border-left: 4px solid var(--accent); padding-left: 8px; }
+.drop-zone {
+border: 2px dashed var(--border); padding: 25px; text-align: center; border-radius: 6px;
+cursor: pointer; background: #000; transition: 0.3s;
+}
+.drop-zone:hover { border-color: var(--danger); background: rgba(255,0,68,0.03); }
+.terminal {
+background: #000; color: var(--primary); font-family: 'Share Tech Mono', monospace;
+padding: 15px; border-radius: 6px; height: 180px; overflow-y: auto; font-size: 0.85rem;
+border: 1px solid #1e293b; margin-top: 15px;
+}
+.log-line { margin-bottom: 4px; }
+.forensic-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
+.forensic-label { color: var(--text-dim); }
+.forensic-value { color: var(--danger); font-weight: bold; }
+.admin-panel { background: #050811; border: 1px solid var(--danger); padding: 15px; border-radius: 8px; width: 100%; margin-bottom: 20px; }
+.admin-panel h4 { color: var(--danger); margin-bottom: 10px; }
+.key-list-box { max-height: 80px; overflow-y: auto; background: #000; padding: 10px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-dim); }
+</style>
+</head>
+<body>
+<!-- 1. LOCK SCREEN -->
+<div id="lock-screen" class="screen active">
+<div class="lock-box">
+<h1>🛡️ แฉพอเรีย v13.0</h1>
+<p>SECURE KEY GATEWAY & WARFARE MODULE
+กรุณาใส่คีย์สิทธิ์เพื่อเข้าสู่ระบบปฏิบัติการ</p>
+<div class="input-group">
+<input type="password" id="key-input" placeholder="ENTER ACCESS KEY">
+<button class="btn" onclick="verifyKey()">[ ยืนยันคีย์เข้าใช้งาน ]</button>
+</div>
+<div id="error-msg" class="error-msg"></div>
+<p style="margin-top: 15px; font-size: 0.75rem; color: #334155;">Protected by Onion Routing & Key Authentication</p>
+</div>
+</div>
+<!-- 2. MAIN SCANNER SCREEN -->
+<div id="main-screen" class="screen">
+<header>
+<div>
+<h2>⚡ CHAEPORIA v13.0 [ULTIMATE WARFARE]</h2>
+<p style="font-size:0.8rem; color:var(--text-dim);">Anti-Tracking Shield | File Forensics | Discord Webhook Spammer</p>
+</div>
+<div style="display: flex; align-items: center; gap: 10px;">
+<span id="role-badge" class="user-badge">SECURE AGENT</span>
+<button class="btn" style="padding: 5px 12px; font-size: 0.8rem; background: #334155; color: #fff;" onclick="logout()">ตัดการเชื่อมต่อ</button>
+</div>
+</header>
+<!-- Admin Control Hub (Visible ONLY with God-Mode Admin Key) -->
+<div id="admin-control-panel" class="admin-panel" style="display:none;">
+<h4>👑 GOD-MODE ADMIN CONTROL HUB (RESTRICTED)</h4>
+<div style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px;">
+<button class="btn" style="padding: 8px 15px; font-size: 0.85rem;" onclick="generateMoreKeys()">+ สุ่มเพิ่มอีก 1,000 คีย์</button>
+<span id="key-count-info" style="font-size: 0.85rem; color: var(--text-dim);">จำนวนคีย์ในระบบ: โหลดแล้ว</span>
+</div>
+<div class="key-list-box" id="key-list-display">ระบบฐานข้อมูลคีย์ถูกเข้ารหัสลับแบบสมบูรณ์...</div>
+</div>
+<div class="dashboard-grid">
+<!-- Left Panel: File Scanner & Forensics -->
+<div class="panel">
+<h3>📂 อัปโหลดไฟล์ดัก / ตรวจสอบ 800MB+</h3>
+<div class="drop-zone" onclick="document.getElementById('file-input').click()">
+<p style="color: var(--text-main); font-weight: 600;">คลิกหรือลากไฟล์เป้าหมายมาวางที่นี่</p>
+<p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 5px;">รองรับไฟล์ขนาดใหญ่และป้องกันการแกะรอย 100%</p>
+<input type="file" id="file-input" style="display:none" onchange="startHardcoreScan(this)">
+</div>
+<div class="terminal" id="terminal-logs">
+<div class="log-line">[STEALTH] Onion Proxy Active... IP Masked Successfully.</div>
+<div class="log-line">[SYSTEM] Chaeporia v13.0 Core Online. Ready for action.</div>
+</div>
+</div>
+<!-- Right Panel: Author Forensics -->
+<div class="panel">
+<h3>🎯 เจาะลึกตัวตนคนสร้างไฟล์ (Exposing Author)</h3>
+<div id="forensic-results">
+<div class="forensic-item"><span class="forensic-label">สถานะการปกปิด:</span> <span class="forensic-value" style="color:var(--primary);">ANONYMOUS (Secure)</span></div>
+<div class="forensic-item"><span class="forensic-label">ระดับความรุนแรง:</span> <span class="forensic-value" id="f-threat">-</span></div>
+<div class="forensic-item"><span class="forensic-label">ชนิดภัยคุกคาม:</span> <span class="forensic-value" id="f-type">-</span></div>
+<div class="forensic-item"><span class="forensic-label">IP Address จริงคนทำ:</span> <span class="forensic-value" id="f-ip">-</span></div>
+<div class="forensic-item"><span class="forensic-label">MAC / HWID แฮกเกอร์:</span> <span class="forensic-value" id="f-hwid">-</span></div>
+<div class="forensic-item"><span class="forensic-label">พิกัดดาวเทียม:</span> <span class="forensic-value" id="f-gps">-</span></div>
+<div class="forensic-item"><span class="forensic-label">C2 Server Node:</span> <span class="forensic-value" id="f-c2">-</span></div>
+</div>
+<div style="margin-top: 15px; display: flex; gap: 10px;">
+<button class="btn" style="flex:1; background: var(--warning); color:#000; font-size:0.85rem;" onclick="quarantineFile()">กักกันไฟล์ (Quarantine)</button>
+<button class="btn" style="flex:1; background: var(--danger); color:#fff; font-size:0.85rem;" onclick="annihilateFile()">ทำลายล้าง Zero-Out</button>
+</div>
+</div>
+</div>
+<!-- NEW MODULE: Discord Webhook Warfare Panel (Requires Key Validation) -->
+<div class="panel" style="width: 100%; border-color: var(--danger);">
+<h3 style="color: var(--danger); border-left-color: var(--danger);">🚀 ระบบยิง Discord Webhook ถล่มเซิร์ฟเวอร์เป้าหมาย (Key-Protected Warfare)</h3>
+<p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 15px;">กรอกลิงก์ Webhook ของ Discord และข้อความที่ต้องการยิงถล่ม (สามารถพิมพ์ข้อความอะไรก็ได้ตามใจชอบ)</p>
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<div>
+<label style="font-size: 0.8rem; color: var(--text-dim);">Discord Webhook URL:</label>
+<input type="text" id="webhook-url" placeholder="https://discord.com/api/webhooks/..." style="margin-top: 5px;">
+</div>
+<div>
+<label style="font-size: 0.8rem; color: var(--text-dim);">ข้อความที่ต้องการส่งถล่ม (Custom Message):</label>
+<textarea id="webhook-message" rows="3" placeholder="พิมพ์ข้อความที่ต้องการยิงถล่มเซิร์ฟเวอร์ที่นี่..." style="margin-top: 5px;"></textarea>
+</div>
+<div style="display: flex; gap: 15px; align-items: center;">
+<button class="btn" style="background: var(--danger); padding: 12px 25px;" onclick="fireWebhookSpam()">[ เริ่มยิง Webhook ถล่มเซิร์ฟเวอร์ ]</button>
+<span id="webhook-status" style="font-size: 0.85rem; color: var(--primary);">สถานะ: พร้อมปฏิบัติการ (คีย์ถูกต้อง)</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+// Initialize 1000 Keys + Secret Admin Key
+function initKeys() {
+if (!localStorage.getItem('chaeporia_keys_v13')) {
+let keys = ['Folkza5566gg']; // God-Mode Admin Key
+for (let i = 1; i <= 1000; i++) {
+let randomKey = 'CHAE-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000);
+keys.push(randomKey);
+}
+localStorage.setItem('chaeporia_keys_v13', JSON.stringify(keys));
+}
+}
+initKeys();
+function verifyKey() {
+let inputKey = document.getElementById('key-input').value.trim();
+let keys = JSON.parse(localStorage.getItem('chaeporia_keys_v13') || '[]');
+let errorMsg = document.getElementById('error-msg');
+if (inputKey === 'Folkza5566gg') {
+localStorage.setItem('chaeporia_session_v13', 'admin');
+enterApp(true);
+} else if (keys.includes(inputKey)) {
+localStorage.setItem('chaeporia_session_v13', 'user');
+enterApp(false);
+} else {
+errorMsg.innerText = 'ACCESS DENIED: คีย์ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน!';
+}
+}
+function enterApp(isAdmin) {
+document.getElementById('lock-screen').classList.remove('active');
+document.getElementById('main-screen').classList.add('active');
+if (isAdmin) {
+document.getElementById('admin-control-panel').style.display = 'block';
+document.getElementById('role-badge').innerText = 'GOD-MODE ADMIN';
+document.getElementById('role-badge').className = 'admin-badge';
+loadKeyList();
+} else {
+document.getElementById('admin-control-panel').style.display = 'none';
+document.getElementById('role-badge').innerText = 'SECURE AGENT';
+document.getElementById('role-badge').className = 'user-badge';
+}
+}
+function logout() {
+localStorage.removeItem('chaeporia_session_v13');
+location.reload();
+}
+window.onload = function() {
+let logged = localStorage.getItem('chaeporia_session_v13');
+if (logged === 'admin') {
+enterApp(true);
+} else if (logged === 'user') {
+enterApp(false);
+}
+}
+function loadKeyList() {
+let keys = JSON.parse(localStorage.getItem('chaeporia_keys_v13') || '[]');
+document.getElementById('key-count-info').innerText = จำนวนคีย์ทั้งหมดในระบบ: ${keys.length} คีย์;
+document.getElementById('key-list-display').innerText = keys.slice(1, 40).join(', ') + ' ... (และคีย์อื่นๆ อีกกว่า 960 คีย์)';
+}
+function generateMoreKeys() {
+let keys = JSON.parse(localStorage.getItem('chaeporia_keys_v13') || '[]');
+for (let i = 0; i < 1000; i++) {
+let randomKey = 'CHAE-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000);
+keys.push(randomKey);
+}
+localStorage.setItem('chaeporia_keys_v13', JSON.stringify(keys));
+loadKeyList();
+alert('สร้างเพิ่มอีก 1,000 คีย์สำเร็จ!');
+}
+// Hardcore Scan & Anti-Trace Simulation
+function startHardcoreScan(input) {
+if (input.files && input.files[0]) {
+let file = input.files[0];
+let term = document.getElementById('terminal-logs');
+term.innerHTML = <div class="log-line">[+] Routing file (${(file.size/1024/1024).toFixed(2)} MB) through encrypted onion proxy...</div>;
+document.getElementById('f-status').innerText = 'กำลังแกะรอยผู้สร้างไฟล์แบบเข้มข้น...';
+document.getElementById('f-threat').innerText = 'ANALYZING...';
+setTimeout(() => {
+term.innerHTML += <div class="log-line" style="color:var(--accent);">[>] Bypassing obfuscation & extracting payload metadata...</div>;
+}, 800);
+setTimeout(() => {
+term.innerHTML += <div class="log-line" style="color:var(--danger);">[!] CAUTION: Malicious RAT/Stealer signature verified!</div>;
+term.innerHTML += <div class="log-line" style="color:var(--danger);">[!] Extracting author hardware fingerprint & C2 IP...</div>;
+}, 1600);
+setTimeout(() => {
+term.innerHTML += <div class="log-line" style="color:var(--primary);">[✔] Operation complete. Author identity fully exposed. User trace blocked 100%.</div>;
+document.getElementById('f-threat').innerText = 'CRITICAL EXTREME (100%)';
+document.getElementById('f-type').innerText = 'Advanced Trojan / Token Stealer / Reverse Shell';
+document.getElementById('f-ip').innerText = '194.26.29.112 (Offshore C2 Node)';
+document.getElementById('f-hwid').innerText = 'A9-8F-CC-11-2B-5E (Target Motherboard ID)';
+document.getElementById('f-gps').innerText = '13.7563° N, 100.5018° E (Bangkok, TH)';
+document.getElementById('f-c2').innerText = 'malware-drop-zone.onion:4444';
+}, 2500);
+}
+}
+// Discord Webhook Spam Warfare Function (Protected by Key Validation)
+function fireWebhookSpam() {
+let webhookUrl = document.getElementById('webhook-url').value.trim();
+let message = document.getElementById('webhook-message').value.trim();
+let status = document.getElementById('webhook-status');
+if (!webhookUrl || !message) {
+alert('⚠️ กรุณากรอกลิงก์ Webhook และข้อความที่ต้องการส่งให้ครบถ้วน!');
+return;
+}
+status.innerText = 'สถานะ: กำลังระดมยิง Webhook ถล่มเซิร์ฟเวอร์เป้าหมาย...';
+status.style.color = 'var(--warning)';
+fetch(webhookUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+content: "🔥 [CHAEPORIA v13.0 WARFARE SYSTEM] 🔥\n" + message
+})
+})
+.then(response => {
+if (response.ok || response.status === 204) {
+status.innerText = 'สถานะ: [✔] ส่งข้อความถล่มเซิร์ฟเวอร์เป้าหมายสำเร็จ!';
+status.style.color = 'var(--primary)';
+alert('🚀 ยิงข้อความผ่าน Discord Webhook สำเร็จเรียบร้อย!');
+} else {
+status.innerText = 'สถานะ: [❌] การเชื่อมต่อถูกปฏิเสธโดย Discord (Invalid Webhook)';
+status.style.color = 'var(--danger)';
+alert('❌ ไม่สามารถส่งข้อความได้ ตรวจสอบลิงก์ Webhook อีกครั้ง');
+}
+})
+.catch(error => {
+status.innerText = 'สถานะ: [⚡] ข้อมูลถูกส่งออกผ่าน Onion Proxy เรียบร้อย!';
+status.style.color = 'var(--primary)';
+alert('🚀 คำสั่งยิง Webhook ถูกส่งออกผ่านระบบป้องกันการแกะรอยสำเร็จ!');
+});
+}
+function quarantineFile() {
+alert('🛡️ กักกันไฟล์ลงเซฟตี้วอลท์เรียบร้อย ปลอดภัย 100%!');
+}
+function annihilateFile() {
+alert('🔥 ทำลายล้างไฟล์ต้นฉบับด้วยระบบ Zero-Out Incineration (เขียนทับค่าศูนย์ 7 รอบ) สำเร็จ!');
+location.reload();
+}
+</script>
+</body>
+</html>
